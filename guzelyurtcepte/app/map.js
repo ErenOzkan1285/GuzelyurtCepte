@@ -14,6 +14,17 @@ const stopsFromDB = [
   { latitude: 35.246486, longitude: 33.035486, title: 'Stop 2' },
   { latitude: 35.247382, longitude: 33.037571, title: 'Stop 3' },
   { latitude: 35.245766, longitude: 33.037998, title: 'Stop 4' },
+  { latitude: 35.24193, longitude: 33.031404, title: 'Stop 5' },
+  { latitude: 35.240922, longitude: 33.026866, title: 'Stop 6' },
+  { latitude: 35.238224,  longitude: 33.023411, title: 'Stop 7' },
+  { latitude: 35.23439, longitude: 33.01957, title: 'Stop 8' },
+  { latitude: 35.203546, longitude: 32.995677, title: 'Stop 9' },
+  { latitude: 35.20138, longitude: 32.999609, title: 'Stop 10' },
+  { latitude: 35.195691, longitude: 33.005408, title: 'Stop 11' },
+  { latitude: 35.191184, longitude: 33.002619, title: 'Stop 12' },
+  { latitude: 35.193196, longitude: 32.999926, title: 'Stop 13' }, 
+  { latitude: 35.192924, longitude: 32.99572, title: 'Stop 14' },
+  { latitude: 35.193205, longitude: 32.994867, title: 'Stop 15' },
 ];
 // hidden via-points
 const viaPoints = [
