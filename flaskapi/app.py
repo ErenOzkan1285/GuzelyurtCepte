@@ -15,7 +15,7 @@ def create_app():
     # Configuration
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'dev-fallback-key'
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or \
-        'mysql+pymysql://root:Ercan1972@localhost/GüzelyurtCepte'
+        'mysql+pymysql://root:Ercan1972@localhost/GuzelyurtCepte'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     migrate = Migrate(app, db)
