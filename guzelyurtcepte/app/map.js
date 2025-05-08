@@ -8,40 +8,33 @@ import { getRouteFromORS } from '../utils/getRoute';
 
 const API_KEY = '5b3ce3597851110001cf62484db6165f3f2349668bb2fb831c3ec50a';
 
-// real stops
-const stopsFromDB = [
-  { latitude: 35.247239, longitude: 33.023302, title: 'Stop 1' },
-  { latitude: 35.246486, longitude: 33.035486, title: 'Stop 2' },
-  { latitude: 35.247382, longitude: 33.037571, title: 'Stop 3' },
-  { latitude: 35.245766, longitude: 33.037998, title: 'Stop 4' },
-  { latitude: 35.24193, longitude: 33.031404, title: 'Stop 5' },
-  { latitude: 35.240922, longitude: 33.026866, title: 'Stop 6' },
-  { latitude: 35.238224,  longitude: 33.023411, title: 'Stop 7' },
-  { latitude: 35.23439, longitude: 33.01957, title: 'Stop 8' },
-  { latitude: 35.203546, longitude: 32.995677, title: 'Stop 9' },
-  { latitude: 35.20138, longitude: 32.999609, title: 'Stop 10' },
-  { latitude: 35.195691, longitude: 33.005408, title: 'Stop 11' },
-  { latitude: 35.191184, longitude: 33.002619, title: 'Stop 12' },
-  { latitude: 35.193196, longitude: 32.999926, title: 'Stop 13' }, 
-  { latitude: 35.192924, longitude: 32.99572, title: 'Stop 14' },
-  { latitude: 35.193205, longitude: 32.994867, title: 'Stop 15' },
-];
+
+
 // hidden via-points
 const viaPoints = [
   { latitude: 35.246692, longitude: 33.037149 },
   { latitude: 35.246333, longitude: 33.036731 },
 ];
-// combine for ORS
-const routeWaypoints = [
-  stopsFromDB[0],
-  ...viaPoints,
-  ...stopsFromDB.slice(1),
-];
+
 
 export default function MapScreen() {
-  const [location, setLocation]       = useState(null);
+  const [stops, setStops] = useState([]);
+  const [location, setLocation] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
-  const [region, setRegion]           = useState(null);
+  const [region, setRegion] = useState(null);
+
+  useEffect(() => {
+    fetch('http://10.0.2.2:5000/api/stops/')
+      .then(response => response.json())
+      .then(data => setStops(data))
+      .catch(error => console.error('Error fetching stops:', error));
+  }, []);
+
+  // combine for ORS
+  const routeWaypoints = React.useMemo(() => {
+    if (stops.length === 0) return [];
+    return [stops[0], ...viaPoints, ...stops.slice(1)];
+  }, [stops]);
 
   // 1) get user location
   useEffect(() => {
@@ -70,9 +63,9 @@ export default function MapScreen() {
     const minLat = Math.min(...lats), maxLat = Math.max(...lats);
     const minLon = Math.min(...lons), maxLon = Math.max(...lons);
     setRegion({
-      latitude:      (minLat + maxLat) / 2,
-      longitude:     (minLon + maxLon) / 2,
-      latitudeDelta:  (maxLat - minLat) * 1.2 || 0.01,
+      latitude: (minLat + maxLat) / 2,
+      longitude: (minLon + maxLon) / 2,
+      latitudeDelta: (maxLat - minLat) * 1.2 || 0.01,
       longitudeDelta: (maxLon - minLon) * 1.2 || 0.01,
     });
   }, [routeCoords]);
@@ -97,11 +90,11 @@ export default function MapScreen() {
           lineCap="round"
           zIndex={1}
         />
-        {stopsFromDB.map((stop, i) => (
+        {stops.map((stop, i) => (
           <Marker
             key={i}
             coordinate={{ latitude: stop.latitude, longitude: stop.longitude }}
-            title={stop.title}
+            title={stop.name}
             anchor={{ x: 0.5, y: 1 }}
             zIndex={10}
           >
@@ -119,5 +112,5 @@ export default function MapScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  map:       { flex: 1 },
+  map: { flex: 1 },
 });

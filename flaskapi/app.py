@@ -4,6 +4,7 @@ from db_config import db
 from routes.user_routes import user_bp
 from routes.customer_routes import customer_bp
 from routes.trip_routes import trip_bp
+from routes.stop_routes import stop_bp
 import os
 from flask_migrate import Migrate
 
@@ -25,6 +26,7 @@ def create_app():
     app.register_blueprint(user_bp, url_prefix='/api/users')
     app.register_blueprint(customer_bp, url_prefix='/api/customers')
     app.register_blueprint(trip_bp, url_prefix='/api/trips')
+    app.register_blueprint(stop_bp, url_prefix='/api/stops')
     
     return app
 
