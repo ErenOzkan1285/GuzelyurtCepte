@@ -1,49 +1,46 @@
 // /app/map.js
 import * as Location from 'expo-location';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import busStopIcon from '../assets/images/bus-stop.png';
+import busIcon     from '../assets/images/bus-icon.png';
 import { getRouteFromORS } from '../utils/getRoute';
+import { BusContext }      from '../utils/busContext';
 
 const API_KEY = '5b3ce3597851110001cf62484db6165f3f2349668bb2fb831c3ec50a';
 
-// real stops
-const stopsFromDB = [
-  { latitude: 35.247239, longitude: 33.023302, title: 'Stop 1' },
-  { latitude: 35.246486, longitude: 33.035486, title: 'Stop 2' },
-  { latitude: 35.247382, longitude: 33.037571, title: 'Stop 3' },
-  { latitude: 35.245766, longitude: 33.037998, title: 'Stop 4' },
-  { latitude: 35.24193, longitude: 33.031404, title: 'Stop 5' },
-  { latitude: 35.240922, longitude: 33.026866, title: 'Stop 6' },
-  { latitude: 35.238224,  longitude: 33.023411, title: 'Stop 7' },
-  { latitude: 35.23439, longitude: 33.01957, title: 'Stop 8' },
-  { latitude: 35.203546, longitude: 32.995677, title: 'Stop 9' },
-  { latitude: 35.20138, longitude: 32.999609, title: 'Stop 10' },
-  { latitude: 35.195691, longitude: 33.005408, title: 'Stop 11' },
-  { latitude: 35.191184, longitude: 33.002619, title: 'Stop 12' },
-  { latitude: 35.193196, longitude: 32.999926, title: 'Stop 13' }, 
-  { latitude: 35.192924, longitude: 32.99572, title: 'Stop 14' },
-  { latitude: 35.193205, longitude: 32.994867, title: 'Stop 15' },
-];
-// hidden via-points
+// ★ your hidden mid-points
 const viaPoints = [
   { latitude: 35.246692, longitude: 33.037149 },
   { latitude: 35.246333, longitude: 33.036731 },
 ];
-// combine for ORS
-const routeWaypoints = [
-  stopsFromDB[0],
-  ...viaPoints,
-  ...stopsFromDB.slice(1),
-];
 
 export default function MapScreen() {
-  const [location, setLocation]       = useState(null);
-  const [routeCoords, setRouteCoords] = useState([]);
-  const [region, setRegion]           = useState(null);
+  const { busPosition, setBusPosition } = useContext(BusContext);
 
-  // 1) get user location
+  // 1️⃣ stops from your API
+  const [stops, setStops]           = useState([]);
+  // 2️⃣ user’s GPS
+  const [location, setLocation]     = useState(null);
+  // 3️⃣ ORS output
+  const [routeCoords, setRouteCoords] = useState([]);
+  // 4️⃣ view region
+  const [region, setRegion]         = useState(null);
+  // 5️⃣ for simulating the bus over time
+  const [busIndex, setBusIndex]     = useState(0);
+
+  const moveInterval = 2000;
+
+  // Fetch stops once
+  useEffect(() => {
+    fetch('http://10.0.2.2:5000/api/stops/')
+      .then(res => res.json())
+      .then(data => setStops(data))
+      .catch(err => console.error('Error fetching stops:', err));
+  }, []);
+
+  // Ask for location once
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -53,22 +50,51 @@ export default function MapScreen() {
     })();
   }, []);
 
-  // 2) fetch route once we have location
-  useEffect(() => {
-    if (!location) return;
-    (async () => {
-      const route = await getRouteFromORS(routeWaypoints, API_KEY);
-      setRouteCoords(route);
-    })();
-  }, [location]);
+  // Build your exact waypoint array only after stops load
+  const routeWaypoints = useMemo(() => {
+    if (stops.length < 2) return [];
+    return [
+      stops[0],
+      ...viaPoints,
+      ...stops.slice(1)
+    ];
+  }, [stops]);
 
-  // 3) compute map region
+  // Fetch ORS route, but only once we have both location & >=2 waypoints
+  useEffect(() => {
+    if (!location) {
+      console.log('⏳ waiting for user location...');
+      return;
+    }
+    if (routeWaypoints.length < 2) {
+      console.log('⏳ waiting for stops to load...');
+      return;
+    }
+
+    (async () => {
+      console.log('▶️ Sending to ORS:', routeWaypoints);
+      try {
+        const route = await getRouteFromORS(routeWaypoints, API_KEY);
+        console.log('✅ Received', route.length, 'points from ORS');
+        setRouteCoords(route);
+        // place bus at the very first point
+        setBusPosition(route[0]);
+      } catch (e) {
+        console.error('ORS routing error:', e);
+      }
+    })();
+  }, [location, routeWaypoints, setBusPosition]);
+
+  // Compute a region that fits the route
   useEffect(() => {
     if (!routeCoords.length) return;
     const lats = routeCoords.map(p => p.latitude);
     const lons = routeCoords.map(p => p.longitude);
-    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-    const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+    const minLat = Math.min(...lats),
+          maxLat = Math.max(...lats),
+          minLon = Math.min(...lons),
+          maxLon = Math.max(...lons);
+
     setRegion({
       latitude:      (minLat + maxLat) / 2,
       longitude:     (minLon + maxLon) / 2,
@@ -77,7 +103,20 @@ export default function MapScreen() {
     });
   }, [routeCoords]);
 
-  // 4) loading state
+  // Simulate the bus moving along the returned polyline
+  useEffect(() => {
+    if (!routeCoords.length) return;
+    const id = setInterval(() => {
+      setBusIndex(idx => {
+        const next = (idx + 1) % routeCoords.length;
+        setBusPosition(routeCoords[next]);
+        return next;
+      });
+    }, moveInterval);
+    return () => clearInterval(id);
+  }, [routeCoords, setBusPosition]);
+
+  // Loading state
   if (!region) {
     return (
       <View style={styles.container}>
@@ -86,7 +125,7 @@ export default function MapScreen() {
     );
   }
 
-  // 5) render the map
+  // Render
   return (
     <View style={styles.container}>
       <MapView style={styles.map} region={region} showsUserLocation>
@@ -94,16 +133,17 @@ export default function MapScreen() {
           coordinates={routeCoords}
           strokeColor="#D22B2B"
           strokeWidth={6}
-          lineCap="round"
-          zIndex={1}
         />
-        {stopsFromDB.map((stop, i) => (
+
+        {stops.map((stop, i) => (
           <Marker
-            key={i}
-            coordinate={{ latitude: stop.latitude, longitude: stop.longitude }}
-            title={stop.title}
+            key={`stop-${i}`}
+            coordinate={{
+              latitude:  stop.latitude,
+              longitude: stop.longitude,
+            }}
+            title={stop.name}
             anchor={{ x: 0.5, y: 1 }}
-            zIndex={10}
           >
             <Image
               source={busStopIcon}
@@ -112,6 +152,19 @@ export default function MapScreen() {
             />
           </Marker>
         ))}
+
+        {busPosition && (
+          <Marker
+            coordinate={busPosition}
+            anchor={{ x: 0.5, y: 0.5 }}
+          >
+            <Image
+              source={busIcon}
+              style={{ width: 30, height: 30 }}
+              resizeMode="contain"
+            />
+          </Marker>
+        )}
       </MapView>
     </View>
   );
