@@ -4,6 +4,7 @@ from db_config import db
 from routes.user_routes import user_bp
 from routes.customer_routes import customer_bp
 from routes.trip_routes import trip_bp
+from routes.stop_routes import stop_bp
 import os
 from flask_migrate import Migrate
 from routes.stop_routes import stop_bp
@@ -15,7 +16,11 @@ def create_app():
     # Configuration
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'dev-fallback-key'
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or \
+<<<<<<< HEAD
         'mysql+pymysql://root:12345@localhost/GuzelyurtCepte'
+=======
+        'mysql+pymysql://root:Ercan1972@localhost/GuzelyurtCepte'
+>>>>>>> 1558a12afcdca4b2054054e36200e0bb674c71cb
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     migrate = Migrate(app, db)

@@ -8,7 +8,12 @@ user_bp = Blueprint('user', __name__)
 @user_bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
+<<<<<<< HEAD
         # Basic validation
+=======
+    
+    # Basic validation
+>>>>>>> 1558a12afcdca4b2054054e36200e0bb674c71cb
     required_fields = ['email', 'name', 'sname', 'password', 'phone']
     if not all(field in data for field in required_fields):
         return jsonify({'message': 'Missing required fields'}), 400
@@ -26,16 +31,26 @@ def register():
         password=hashed_pw.decode('utf-8'),
         phone=data['phone'],
     )
+    
     db.session.add(new_user)
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 1558a12afcdca4b2054054e36200e0bb674c71cb
     new_customer = Customer(
         email=data['email'],  
         balance = 0, #by default
     )
     
     db.session.add(new_customer)
+<<<<<<< HEAD
 
     db.session.commit()
+=======
+    db.session.commit()
+    
+>>>>>>> 1558a12afcdca4b2054054e36200e0bb674c71cb
     return jsonify({'message': 'Customer registered successfully'}), 201
 
 @user_bp.route('/login', methods=['POST'])

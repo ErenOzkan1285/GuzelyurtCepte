@@ -96,9 +96,9 @@ export default function MapScreen() {
           maxLon = Math.max(...lons);
 
     setRegion({
-      latitude:      (minLat + maxLat) / 2,
-      longitude:     (minLon + maxLon) / 2,
-      latitudeDelta:  (maxLat - minLat) * 1.2 || 0.01,
+      latitude: (minLat + maxLat) / 2,
+      longitude: (minLon + maxLon) / 2,
+      latitudeDelta: (maxLat - minLat) * 1.2 || 0.01,
       longitudeDelta: (maxLon - minLon) * 1.2 || 0.01,
     });
   }, [routeCoords]);
@@ -172,5 +172,5 @@ export default function MapScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  map:       { flex: 1 },
+  map: { flex: 1 },
 });
