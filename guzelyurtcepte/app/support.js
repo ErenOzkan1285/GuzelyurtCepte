@@ -16,34 +16,68 @@ export default function SupportScreen() {
   const [responseText, setResponseText] = useState('');
   const [sending, setSending] = useState(false);
 
-  // Mock data for demonstration
-  const mockFeedbacks = [
-    { id: 1, userEmail: 'alice@example.com', message: 'App crashes when I tap "Book".', responded: false },
-    { id: 2, userEmail: 'bob@example.com', message: 'Can you add late-night schedules?', responded: true },
-    { id: 3, userEmail: 'carol@example.com', message: 'My balance is not updating.', responded: false },
-  ];
+useEffect(() => {
+  const fetchFeedbacks = async () => {
+    try {
+      const res = await fetch('http://10.0.2.2:5000/api/feedback/');
+      const data = await res.json();
 
-  // Load mock data on mount
-  useEffect(() => {
-    setFeedbacks(mockFeedbacks);
-  }, []);
+      const formatted = data.map(fb => ({
+        id: fb.feedback_id,
+        userEmail: fb.customer?.email || 'Unknown',
+        message: fb.comment,
+        responded: fb.response != null,
+        fullData: fb
+      }));
+
+      setFeedbacks(formatted);
+    } catch (error) {
+      console.error('Error fetching feedbacks:', error);
+      Alert.alert('Error', 'Could not load feedbacks from server.');
+    }
+  };
+
+  fetchFeedbacks();
+}, []);
 
   // Simulate sending a response
-  const sendResponse = async () => {
-    if (!selected) return;
-    setSending(true);
-    // Simulate network delay
-    setTimeout(() => {
-      setFeedbacks(prev =>
-        prev.map(f =>
-          f.id === selected.id ? { ...f, responded: true } : f
-        )
-      );
-      setSelected(null);
-      setResponseText('');
-      setSending(false);
-    }, 1000);
-  };
+const sendResponse = async () => {
+  if (!selected) return;
+  setSending(true);
+
+  try {
+    const res = await fetch(`http://10.0.2.2:5000/api/feedback/${selected.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        response: responseText,
+        support: 'support1@example.com'  // opsiyonel, hardcoded örnek
+      })
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(errText);
+    }
+
+    // feedback listesini güncelle
+    setFeedbacks(prev =>
+      prev.map(f =>
+        f.id === selected.id ? { ...f, responded: true } : f
+      )
+    );
+
+    setSelected(null);
+    setResponseText('');
+  } catch (error) {
+    console.error('Failed to send response:', error);
+    Alert.alert('Error', 'Could not send response to server.');
+  } finally {
+    setSending(false);
+  }
+};
 
   // If a feedback is selected, show detail + response box
   if (selected) {

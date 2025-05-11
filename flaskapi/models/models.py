@@ -33,10 +33,10 @@ class Customer(db.Model):
     email = db.Column(db.String(255), db.ForeignKey('USER.email'), primary_key=True)
     balance = db.Column(db.Numeric(10, 2), default=0.00)
     user = db.relationship('User', back_populates='customer')
-    
+
     # Relationships
     trips = db.relationship('CustomerTrip', back_populates='customer')
-    feedbacks = db.relationship('Feedback', back_populates='customer')
+    feedbacks = db.relationship('Feedback', back_populates='customer_feedback')  
 
 class Support(db.Model):
     __tablename__ = 'SUPPORT'
@@ -44,7 +44,7 @@ class Support(db.Model):
     employee = db.relationship('Employee', back_populates='support')
     
     # Relationships
-    feedbacks = db.relationship('Feedback', back_populates='support')
+    feedbacks = db.relationship('Feedback', back_populates='support_feedback')
 
 class Bus(db.Model):
     __tablename__ = 'BUS'
@@ -138,13 +138,13 @@ class Feedback(db.Model):
     comment = db.Column(db.Text)
     response = db.Column(db.Text)
     trip_id = db.Column(db.Integer, db.ForeignKey('TRIP.trip_id'))
-    support_email = db.Column(db.String(255), db.ForeignKey('SUPPORT.email'))
-    customer_email = db.Column(db.String(255), db.ForeignKey('CUSTOMER.email'))
+    support = db.Column(db.String(255), db.ForeignKey('SUPPORT.email'))
+    customer = db.Column(db.String(255), db.ForeignKey('CUSTOMER.email'))
     
     # Relationships
     trip = db.relationship('Trip', back_populates='feedbacks')
-    support = db.relationship('Support', back_populates='feedbacks')
-    customer = db.relationship('Customer', back_populates='feedbacks')
+    support_feedback = db.relationship('Support', back_populates='feedbacks', foreign_keys=[support])
+    customer_feedback = db.relationship('Customer', back_populates='feedbacks', foreign_keys=[customer])
 
 class StopConnection(db.Model):
     __tablename__ = 'STOP_CONNECTION'

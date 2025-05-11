@@ -53,8 +53,4 @@ def delete_stop(name):
     stop = Stop.query.get_or_404(name)
     db.session.delete(stop)
     db.session.commit()
-<<<<<<< HEAD
     return jsonify({'message': 'Stop deleted'})
-=======
-    return jsonify({'message': 'Stop deleted'})
->>>>>>> 1558a12afcdca4b2054054e36200e0bb674c71cb

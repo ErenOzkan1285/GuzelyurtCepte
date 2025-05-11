@@ -8,6 +8,7 @@ from routes.stop_routes import stop_bp
 import os
 from flask_migrate import Migrate
 from routes.stop_routes import stop_bp
+from routes.feedback_routes import feedback_bp  
 
 def create_app():
     app = Flask(__name__)
@@ -16,22 +17,22 @@ def create_app():
     # Configuration
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'dev-fallback-key'
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or \
-<<<<<<< HEAD
-        'mysql+pymysql://root:12345@localhost/GuzelyurtCepte'
-=======
-        'mysql+pymysql://root:Ercan1972@localhost/GuzelyurtCepte'
->>>>>>> 1558a12afcdca4b2054054e36200e0bb674c71cb
+        'mysql+pymysql://root:1234@localhost/GuzelyurtCepte'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     migrate = Migrate(app, db)
     # Initialize database
     db.init_app(app)
+
     
+
+  
     # Register blueprints
     app.register_blueprint(user_bp, url_prefix='/api/users')
     app.register_blueprint(customer_bp, url_prefix='/api/customers')
     app.register_blueprint(trip_bp, url_prefix='/api/trips')
     app.register_blueprint(stop_bp, url_prefix='/api/stops')
+    app.register_blueprint(feedback_bp, url_prefix='/api/feedback')
     
     return app
 
