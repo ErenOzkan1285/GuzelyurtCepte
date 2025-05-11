@@ -1,6 +1,6 @@
 import bcrypt
 from flask import Blueprint, request, jsonify
-from models.models import User, Customer, Employee, Support, Driver,  db
+from models.models import User, Customer, Employee, Support, Driver, CustomerTrip, db
 from db_config import db
 
 user_bp = Blueprint('user', __name__)
@@ -71,3 +71,37 @@ def login():
             'role': role
         }
     }), 200
+
+
+#Bunu dbde çalıştırmamız gerekiyor
+#ALTER TABLE CUSTOMER_TRIP CHANGE customer customer_email VARCHAR(255);
+@user_bp.route('/customer-trips', methods=['GET'])
+def get_customer_trips():
+    email = request.args.get('email')
+    if not email:
+        return jsonify({'message': 'Email is required as a query parameter'}), 400
+
+    # Verify customer exists
+    if not Customer.query.get(email):
+        return jsonify({'message': 'Customer not found'}), 404
+
+    # Get trips using the correct relationship
+    customer = Customer.query.get(email)
+    trips = customer.customer_trips  # Using the relationship directly
+
+    trip_list = [{
+        'customer_trip_id': trip.customer_trip_id,
+        'cost': str(trip.cost),
+        'refunded_credit': str(trip.refunded_credit),
+        'trip_id': trip.trip_id,
+        'start_position': trip.start_position,
+        'end_position': trip.end_position,
+        'customer_email': trip.customer_email
+    } for trip in trips]
+
+    return jsonify({'customer': email, 'trips': trip_list}), 200
+
+
+
+
+

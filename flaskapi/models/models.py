@@ -34,9 +34,14 @@ class Customer(db.Model):
     balance = db.Column(db.Numeric(10, 2), default=0.00)
     user = db.relationship('User', back_populates='customer')
 
-    # Relationships
-    trips = db.relationship('CustomerTrip', back_populates='customer')
-    feedbacks = db.relationship('Feedback', back_populates='customer_feedback')  
+    # Relationship to CustomerTrip
+    customer_trips = db.relationship(
+        'CustomerTrip', 
+        back_populates='customer',
+        foreign_keys='[CustomerTrip.customer_email]'
+    )
+    
+    feedbacks = db.relationship('Feedback', back_populates='customer_feedback')
 
 class Support(db.Model):
     __tablename__ = 'SUPPORT'
@@ -125,13 +130,13 @@ class CustomerTrip(db.Model):
     start_position = db.Column(db.String(255), db.ForeignKey('STOP.name'))
     end_position = db.Column(db.String(255), db.ForeignKey('STOP.name'))
     customer_email = db.Column(db.String(255), db.ForeignKey('CUSTOMER.email'))
-    
+
     # Relationships
     trip = db.relationship('Trip', back_populates='customer_trips')
     start_stop = db.relationship('Stop', foreign_keys=[start_position])
     end_stop = db.relationship('Stop', foreign_keys=[end_position])
-    customer = db.relationship('Customer', back_populates='trips')
-
+    customer = db.relationship('Customer', back_populates='customer_trips')
+    
 class Feedback(db.Model):
     __tablename__ = 'FEEDBACK'
     feedback_id = db.Column(db.Integer, primary_key=True)
