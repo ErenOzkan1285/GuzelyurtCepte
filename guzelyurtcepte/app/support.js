@@ -133,7 +133,7 @@ const sendResponse = async () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', padding: 16 },
-  header: { fontSize: 24, fontWeight: 'bold', marginBottom: 12 },
+  header: { fontSize: 24, fontWeight: 'bold', marginVertical: 24 },
   item: { padding: 12, flexDirection: 'row', justifyContent: 'space-between' },
   itemText: { fontSize: 16 },
   itemSub: { fontSize: 14, color: '#666' },

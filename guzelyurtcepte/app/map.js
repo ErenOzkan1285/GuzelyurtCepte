@@ -9,9 +9,8 @@ import { getRouteFromORS } from '../utils/getRoute';
 import { BusContext }      from '../utils/busContext';
 
 const API_KEY = '5b3ce3597851110001cf62484db6165f3f2349668bb2fb831c3ec50a';
-const TRIP_ID = "1";
+const TRIP_ID = 1;
 
-// ★ your hidden mid-points
 const viaPoints = [
   { latitude: 35.246692, longitude: 33.037149 },
   { latitude: 35.246333, longitude: 33.036731 },
@@ -20,28 +19,21 @@ const viaPoints = [
 export default function MapScreen() {
   const { busPosition, setBusPosition } = useContext(BusContext);
 
-  // 1️⃣ stops from your API
-  const [stops, setStops]           = useState([]);
-  // 2️⃣ user’s GPS
-  const [location, setLocation]     = useState(null);
-  // 3️⃣ ORS output
+  const [stops,       setStops]       = useState([]);
+  const [location,    setLocation]    = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
-  // 4️⃣ view region
-  const [region, setRegion]         = useState(null);
-  // 5️⃣ for simulating the bus over time
-  const [busIndex, setBusIndex]     = useState(0);
+  const [region,      setRegion]      = useState(null);
+  const [busIndex,    setBusIndex]    = useState(0);
 
-  const moveInterval = 2000;
-
-  // Fetch stops once
+  // 1) Load stops for this trip
   useEffect(() => {
-    fetch('http://10.0.2.2:5000/api/stops/trip/1')
-      .then(res => res.json())
-      .then(data => setStops(data))
-      .catch(err => console.error('Error fetching stops:', err));
+    fetch(`http://10.0.2.2:5000/api/stops/trip/${TRIP_ID}`)
+      .then(r => r.json())
+      .then(setStops)
+      .catch(console.error);
   }, []);
 
-  // Ask for location once
+  // 2) Ask for user location
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -51,42 +43,34 @@ export default function MapScreen() {
     })();
   }, []);
 
-  // Build your exact waypoint array only after stops load
+  // 3) Build ordered waypoints
   const routeWaypoints = useMemo(() => {
     if (stops.length < 2) return [];
     return [
-      stops[0],
+      { latitude: stops[0].latitude, longitude: stops[0].longitude },
       ...viaPoints,
-      ...stops.slice(1)
+      ...stops.slice(1).map(s => ({
+        latitude:  s.latitude,
+        longitude: s.longitude
+      }))
     ];
   }, [stops]);
 
-  // Fetch ORS route, but only once we have both location & >=2 waypoints
+  // 4) Fetch ORS once we have location + waypoints
   useEffect(() => {
-    if (!location) {
-      console.log('⏳ waiting for user location...');
-      return;
-    }
-    if (routeWaypoints.length < 2) {
-      console.log('⏳ waiting for stops to load...');
-      return;
-    }
+    if (!location || routeWaypoints.length < 2) return;
 
     (async () => {
-      console.log('▶️ Sending to ORS:', routeWaypoints);
       try {
         const route = await getRouteFromORS(routeWaypoints, API_KEY);
-        console.log('✅ Received', route.length, 'points from ORS');
         setRouteCoords(route);
-        // place bus at the very first point
-        setBusPosition(route[0]);
       } catch (e) {
         console.error('ORS routing error:', e);
       }
     })();
-  }, [location, routeWaypoints, setBusPosition]);
+  }, [location, routeWaypoints]);
 
-  // Compute a region that fits the route
+  // 5) Once ORS gives us coords, compute map region
   useEffect(() => {
     if (!routeCoords.length) return;
     const lats = routeCoords.map(p => p.latitude);
@@ -97,36 +81,42 @@ export default function MapScreen() {
           maxLon = Math.max(...lons);
 
     setRegion({
-      latitude: (minLat + maxLat) / 2,
-      longitude: (minLon + maxLon) / 2,
-      latitudeDelta: (maxLat - minLat) * 1.2 || 0.01,
-      longitudeDelta: (maxLon - minLon) * 1.2 || 0.01,
+      latitude:      (minLat + maxLat)/2,
+      longitude:     (minLon + maxLon)/2,
+      latitudeDelta:  (maxLat - minLat)*1.2 || 0.01,
+      longitudeDelta: (maxLon - minLon)*1.2 || 0.01,
     });
   }, [routeCoords]);
 
-  // Simulate the bus moving along the returned polyline
+  // 6) Initialize the bus at the start of the route (NEW effect)
+  useEffect(() => {
+    if (routeCoords.length > 0) {
+      setBusPosition(routeCoords[0]);
+      setBusIndex(0);
+    }
+  }, [routeCoords, setBusPosition]);
+
+  // 7) Simulate the bus moving
   useEffect(() => {
     if (!routeCoords.length) return;
     const id = setInterval(() => {
-      setBusIndex(idx => {
-        const next = (idx + 1) % routeCoords.length;
+      setBusIndex(i => {
+        const next = (i + 1) % routeCoords.length;
         setBusPosition(routeCoords[next]);
         return next;
       });
-    }, moveInterval);
+    }, 2000);
     return () => clearInterval(id);
   }, [routeCoords, setBusPosition]);
 
-  // Loading state
+  // 8) Loading—and then render
   if (!region) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large"/>
       </View>
     );
   }
-
-  // Render
   return (
     <View style={styles.container}>
       <MapView style={styles.map} region={region} showsUserLocation>
@@ -135,35 +125,19 @@ export default function MapScreen() {
           strokeColor="#D22B2B"
           strokeWidth={6}
         />
-
-        {stops.map((stop, i) => (
+        {stops.map((s,i) => (
           <Marker
-            key={`stop-${i}`}
-            coordinate={{
-              latitude:  stop.latitude,
-              longitude: stop.longitude,
-            }}
-            title={stop.name}
-            anchor={{ x: 0.5, y: 1 }}
+            key={i}
+            coordinate={{ latitude: s.latitude, longitude: s.longitude }}
+            title={`${s.order}. ${s.name}`}
+            anchor={{ x:0.5,y:1 }}
           >
-            <Image
-              source={busStopIcon}
-              style={{ width: 40, height: 40 }}
-              resizeMode="contain"
-            />
+            <Image source={busStopIcon} style={{width:40,height:40}}/>
           </Marker>
         ))}
-
         {busPosition && (
-          <Marker
-            coordinate={busPosition}
-            anchor={{ x: 0.5, y: 0.5 }}
-          >
-            <Image
-              source={busIcon}
-              style={{ width: 30, height: 30 }}
-              resizeMode="contain"
-            />
+          <Marker coordinate={busPosition} anchor={{x:0.5,y:0.5}}>
+            <Image source={busIcon} style={{width:30,height:30}}/>
           </Marker>
         )}
       </MapView>
@@ -172,6 +146,6 @@ export default function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  map: { flex: 1 },
-});
+  container:{flex:1, marginTop: 50},
+  map:      {flex:1},
+}); 

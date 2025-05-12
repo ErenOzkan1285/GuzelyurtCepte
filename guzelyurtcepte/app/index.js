@@ -129,14 +129,6 @@ export default function TripDetailsPage() {
   // render
   return (
     <View style={styles.container}>
-      {/* Trip header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Trip #{trip.trip_id}</Text>
-        <Text>Bus: {trip.bus_license_plate} ({trip.bus_model})</Text>
-        <Text>Driver: {trip.driver.name || trip.driver.email}</Text>
-        <Text>Capacity: {trip.current_capacity}</Text>
-      </View>
-
       {/* Search input */}
       <TextInput
         style={styles.input}
@@ -184,7 +176,7 @@ export default function TripDetailsPage() {
 
 const styles = StyleSheet.create({
   loader:    { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#fff', marginTop: 50},
   header:    { padding: 16, backgroundColor: '#1E90FF' },
   headerTitle:  { fontSize: 20, fontWeight: 'bold', color: '#fff' },
   input:     {

@@ -11,15 +11,15 @@ export default function RootLayout() {
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: '#1E90FF',
-          tabBarStyle: { height: 60, paddingBottom: 5 },
+          tabBarStyle: { height: 80},
         }}
       >
         <Tabs.Screen
           name="index"
           options={{
             title: 'Bus',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="bus" size={size} color={color} />
+            tabBarIcon: ({ color }) => (
+              <Ionicons name="bus" size={32} color={color} />
             ),
           }}
         />
@@ -28,7 +28,7 @@ export default function RootLayout() {
           options={{
             title: 'Map',
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="map" size={size} color={color} />
+              <Ionicons name="map" size={32} color={color} />
             ),
           }}
         />
@@ -37,7 +37,16 @@ export default function RootLayout() {
           options={{
             title: 'Profile',
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="person-circle" size={size} color={color} />
+              <Ionicons name="person-circle" size={32} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="support"
+          options={{
+            title: 'Support',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="person-circle" size={32} color={color} />
             ),
           }}
         />
