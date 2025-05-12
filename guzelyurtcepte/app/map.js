@@ -9,6 +9,7 @@ import { getRouteFromORS } from '../utils/getRoute';
 import { BusContext }      from '../utils/busContext';
 
 const API_KEY = '5b3ce3597851110001cf62484db6165f3f2349668bb2fb831c3ec50a';
+const TRIP_ID = "1";
 
 // ★ your hidden mid-points
 const viaPoints = [
@@ -34,7 +35,7 @@ export default function MapScreen() {
 
   // Fetch stops once
   useEffect(() => {
-    fetch('http://10.0.2.2:5000/api/stops/')
+    fetch('http://10.0.2.2:5000/api/stops/trip/1')
       .then(res => res.json())
       .then(data => setStops(data))
       .catch(err => console.error('Error fetching stops:', err));

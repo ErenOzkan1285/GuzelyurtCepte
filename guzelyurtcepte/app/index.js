@@ -13,6 +13,8 @@ import {
 import { BusContext } from '../utils/busContext';
 
 const API_KEY = '5b3ce3597851110001cf62484db6165f3f2349668bb2fb831c3ec50a';
+// Change this to the trip you want to load:
+const TRIP_ID = 1;
 
 /**
  * Calls ORS for a two-point driving route and returns travel time in seconds.
@@ -52,36 +54,52 @@ async function getETAFromORS(start, end, apiKey, profile = 'driving-car') {
   return duration;
 }
 
-export default function BusSearchPage() {
+export default function TripDetailsPage() {
   const { busPosition } = useContext(BusContext);
-  const [stops, setStops]     = useState([]);
-  const [query, setQuery]     = useState('');
-  const [etaText, setEtaText] = useState('');
+
+  // trip metadata + stops
+  const [trip, setTrip]     = useState(null);
+  const [stops, setStops]   = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1) Fetch stops
+  // search + ETA
+  const [query, setQuery]   = useState('');
+  const [etaText, setEtaText] = useState('');
+
+  // 1️⃣ Fetch trip (and its stops) once
   useEffect(() => {
-    fetch('http://10.0.2.2:5000/api/stops/')
-      .then(res => res.json())
-      .then(data => setStops(data))
+    fetch(`http://10.0.2.2:5000/api/trips/${TRIP_ID}`)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        setTrip(data);
+        // `data.stops` is an array of { name, order, longitude, latitude }
+        // sort by `order` to ensure correct sequence
+        const ordered = data.stops
+          .slice()
+          .sort((a, b) => a.order - b.order);
+        setStops(ordered);
+      })
       .catch(err => {
-        console.error('Error fetching stops:', err);
-        Alert.alert('Error', 'Could not load stops from server.');
+        console.error('Error fetching trip:', err);
+        Alert.alert('Error', 'Could not load trip details from server.');
       })
       .finally(() => setLoading(false));
   }, []);
 
-  // filter as user types
-  const filtered = stops.filter(stop =>
-    stop.name.toLowerCase().includes(query.toLowerCase())
+  // filter stops as the user types
+  const filtered = stops.filter(s =>
+    s.name.toLowerCase().includes(query.toLowerCase())
   );
 
-  // on tap, compute ETA
+  // when user taps a stop
   const onSelectStop = async (stop) => {
     if (!busPosition) {
       return Alert.alert(
         'Bus position unknown',
-        'Please open the Map tab first to get the bus location.'
+        'Please open the Map tab first so we can get the simulated bus location.'
       );
     }
     try {
@@ -99,7 +117,8 @@ export default function BusSearchPage() {
     }
   };
 
-  if (loading) {
+  // show a loader until trip & stops loaded
+  if (loading || !trip) {
     return (
       <View style={styles.loader}>
         <ActivityIndicator size="large" />
@@ -107,8 +126,18 @@ export default function BusSearchPage() {
     );
   }
 
+  // render
   return (
     <View style={styles.container}>
+      {/* Trip header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Trip #{trip.trip_id}</Text>
+        <Text>Bus: {trip.bus_license_plate} ({trip.bus_model})</Text>
+        <Text>Driver: {trip.driver.name || trip.driver.email}</Text>
+        <Text>Capacity: {trip.current_capacity}</Text>
+      </View>
+
+      {/* Search input */}
       <TextInput
         style={styles.input}
         placeholder="Search for a stop…"
@@ -119,18 +148,18 @@ export default function BusSearchPage() {
         }}
       />
 
+      {/* Stops list */}
       <FlatList
         data={filtered}
-        // safe key: prefer item.id, otherwise index
-        keyExtractor={(item, index) =>
-          item.id != null ? item.id.toString() : index.toString()
-        }
+        keyExtractor={(item, idx) => item.order?.toString() ?? idx.toString()}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.item}
             onPress={() => onSelectStop(item)}
           >
-            <Text style={styles.itemText}>{item.name}</Text>
+            <Text style={styles.itemText}>
+              {item.order}. {item.name}
+            </Text>
           </TouchableOpacity>
         )}
         ListEmptyComponent={() => (
@@ -138,9 +167,15 @@ export default function BusSearchPage() {
         )}
       />
 
+      {/* ETA + trip details overlay */}
       {etaText !== '' && (
-        <View style={styles.etaContainer}>
-          <Text style={styles.etaText}>{etaText}</Text>
+        <View style={styles.overlay}>
+          <Text style={styles.overlayText}>{etaText}</Text>
+          <Text style={styles.overlaySub}>Capacity: {trip.current_capacity}</Text>
+          <Text style={styles.overlaySub}>Bus: {trip.bus_license_plate}</Text>
+          <Text style={styles.overlaySub}>
+            Driver: {trip.driver.name || trip.driver.email}
+          </Text>
         </View>
       )}
     </View>
@@ -149,31 +184,34 @@ export default function BusSearchPage() {
 
 const styles = StyleSheet.create({
   loader:    { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  input: {
+  container: { flex: 1, backgroundColor: '#fff' },
+  header:    { padding: 16, backgroundColor: '#1E90FF' },
+  headerTitle:  { fontSize: 20, fontWeight: 'bold', color: '#fff' },
+  input:     {
     height: 50,
     borderColor: '#ccc',
     borderWidth: 1,
+    margin: 16,
     borderRadius: 8,
     paddingHorizontal: 12,
-    marginBottom: 12,
   },
-  item: {
+  item:      {
     paddingVertical: 12,
+    paddingHorizontal: 16,
     borderBottomColor: '#eee',
     borderBottomWidth: 1,
   },
-  itemText: { fontSize: 16 },
-  empty:    { textAlign: 'center', marginTop: 20, color: '#888' },
-  etaContainer: {
-    padding:        12,
-    backgroundColor:'#1E90FF',
-    borderRadius:   8,
-    marginTop:      12,
+  itemText:  { fontSize: 16 },
+  empty:     { textAlign: 'center', marginTop: 20, color: '#888' },
+  overlay:   {
+    position: 'absolute',
+    bottom:   20,
+    left:     20,
+    right:    20,
+    padding:      16,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    borderRadius: 8,
   },
-  etaText: {
-    color:      '#fff',
-    fontSize:   16,
-    fontWeight: '600',
-  },
+  overlayText: { color: '#fff', fontSize: 18, marginBottom: 8 },
+  overlaySub:  { color: '#ddd', fontSize: 14 },
 });

@@ -91,7 +91,7 @@ class Trip(db.Model):
     driver = relationship('Driver', back_populates='trips')
     bus = relationship('Bus', back_populates='trips')
     
-    includes = db.relationship('Includes', back_populates='trip', cascade='all, delete-orphan')
+    includes = db.relationship('Includes', back_populates='trip', cascade='all, delete-orphan', order_by='Includes.stop_order')
     customer_trips = db.relationship('CustomerTrip', back_populates='trip')
     feedbacks = db.relationship('Feedback', back_populates='trip')
 

@@ -77,26 +77,32 @@ def get_trip(trip_id):
     trip = Trip.query.get(trip_id)
     if not trip:
         return jsonify({'error': 'Trip not found'}), 404
-    
-    # Convert the driver object to a serializable dictionary
-    driver_data = {
-        'email': trip.driver.email,
-        'driver_license': trip.driver.driver_license,
-        # Add more driver attributes if needed
-    }
+
+    # trip.includes is already ordered by stop_order
+    stops_data = []
+    for include in trip.includes:
+        stop = include.stop
+        if not stop:
+            continue   # skip any orphan includes
+        stops_data.append({
+            'name':      stop.name,
+            'order':     include.stop_order,
+            'longitude': stop.longitude,
+            'latitude':  stop.latitude,
+        })
 
     trip_data = {
-        'trip_id': trip.trip_id,
-        'date_time': trip.date_time,
-        'current_capacity': trip.current_capacity,
+        'trip_id':           trip.trip_id,
+        'date_time':         trip.date_time,
+        'current_capacity':  trip.current_capacity,
         'bus_license_plate': trip.bus_license_plate,
-        'driver': driver_data,  # Use the driver_data dictionary
-        'stops': [{
-            'name': include.stop.name,
-            'order': include.stop_order,
-            'longitude': include.stop.longitude,
-            'latitude': include.stop.latitude
-        } for include in trip.includes]
+        'driver': {
+          'email':          trip.driver.email if trip.driver else None,
+          'driver_license': trip.driver.driver_license if trip.driver else None,
+          'name':           getattr(trip.driver.user, 'name', None)
+        },
+        'stops': stops_data
     }
-    
+
     return jsonify(trip_data)
+
