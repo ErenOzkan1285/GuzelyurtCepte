@@ -3,10 +3,10 @@ import * as Location from 'expo-location';
 import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
-import busStopIcon from '../assets/images/bus-stop.png';
-import busIcon     from '../assets/images/bus-icon.png';
-import { getRouteFromORS } from '../utils/getRoute';
-import { BusContext }      from '../utils/busContext';
+import busStopIcon from '../../assets/images/bus-stop.png';
+import busIcon     from '../../assets/images/bus-icon.png';
+import { getRouteFromORS } from '../../utils/getRoute';
+import { BusContext }      from '../../utils/busContext';
 
 const API_KEY = '5b3ce3597851110001cf62484db6165f3f2349668bb2fb831c3ec50a';
 const TRIP_ID = 1;

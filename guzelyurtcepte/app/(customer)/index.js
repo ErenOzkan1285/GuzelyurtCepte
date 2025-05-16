@@ -10,7 +10,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { BusContext } from '../utils/busContext';
+import { BusContext } from '../../utils/busContext';
 
 const API_KEY = '5b3ce3597851110001cf62484db6165f3f2349668bb2fb831c3ec50a';
 // Change this to the trip you want to load:

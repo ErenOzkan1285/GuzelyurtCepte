@@ -1,56 +1,38 @@
-// /app/_layout.js
-import React from 'react';
-import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Slot, useRouter, useSegments } from 'expo-router';
+import { AuthProvider, useAuth } from '../utils/authContext';
 import { BusProvider } from '../utils/busContext';
+import { useEffect } from 'react';
 
 export default function RootLayout() {
   return (
-    <BusProvider>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: '#1E90FF',
-          tabBarStyle: { height: 80},
-        }}
-      >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Bus',
-            tabBarIcon: ({ color }) => (
-              <Ionicons name="bus" size={32} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="map"
-          options={{
-            title: 'Map',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="map" size={32} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: 'Profile',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="person-circle" size={32} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="support"
-          options={{
-            title: 'Support',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="person-circle" size={32} color={color} />
-            ),
-          }}
-        />
-      </Tabs>
-    </BusProvider>
+    <AuthProvider>
+      <BusProvider>
+        <NavigationHandler />
+      </BusProvider>
+    </AuthProvider>
   );
+}
+
+function NavigationHandler() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (!user) {
+      // Eğer giriş yoksa auth segmentine git
+      if (segments[0] !== '(auth)') {
+        router.replace('/(auth)/login');
+      }
+    } else {
+      // Eğer giriş yapılmışsa role'a göre route
+      if (user.role === 'support' && segments[0] !== '(support)') {
+        router.replace('/(support)');
+      } else if (user.role === 'customer' && segments[0] !== '(customer)') {
+        router.replace('/(customer)');
+      }
+    }
+  }, [user, segments]);
+
+  return <Slot />;
 }

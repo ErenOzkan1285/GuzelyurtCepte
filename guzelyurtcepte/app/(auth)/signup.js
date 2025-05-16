@@ -1,32 +1,96 @@
 import React, { useState } from 'react';
-import { StyleSheet, Pressable, TextInput, Image, View, Text, TouchableOpacity } from 'react-native';
+import {
+  StyleSheet,
+  Pressable,
+  TextInput,
+  Image,
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 
-export default function Login() {
+export default function SignUp() {
   const router = useRouter();
-  const [username, setUsername] = useState('');
+
+  // Form state'leri
+  const [name, setName] = useState('');
+  const [sname, setSname] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+
+  // REGISTER İSTEĞİ
+  const handleRegister = async () => {
+    try {
+      const res = await fetch('http://10.0.2.2:5000/api/users/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          name,
+          sname,
+          phone,
+          password
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        Alert.alert('Registration Failed', data.message || 'An error occurred');
+        return;
+      }
+
+      Alert.alert('Success', 'User registered successfully!');
+      router.replace('/login'); // login sayfasına yönlendir
+
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    }
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Image
-          source={require('../assets/images/guzelyurtcepte_logo.png')}
+          source={require('../../assets/images/guzelyurtcepte_logo.png')}
           style={styles.logo}
           resizeMode="stretch"
         />
       </View>
       <View style={styles.footer}>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>Login</Text>
+          <Text style={styles.title}>Sign Up</Text>
         </View>
         <View>
+          <TextInput
+            placeholder="Name"
+            placeholderTextColor="#AEAEAE"
+            style={styles.inputContainer}
+            value={name}
+            onChangeText={setName}
+          />
+          <TextInput
+            placeholder="Surname"
+            placeholderTextColor="#AEAEAE"
+            style={styles.inputContainer}
+            value={sname}
+            onChangeText={setSname}
+          />
           <TextInput
             placeholder="Email"
             placeholderTextColor="#AEAEAE"
             style={styles.inputContainer}
-            value={username}
-            onChangeText={setUsername}
+            value={email}
+            onChangeText={setEmail}
+          />
+          <TextInput
+            placeholder="Phone Number"
+            placeholderTextColor="#AEAEAE"
+            style={styles.inputContainer}
+            value={phone}
+            onChangeText={setPhone}
           />
           <TextInput
             placeholder="Password"
@@ -41,14 +105,14 @@ export default function Login() {
           <Pressable
             style={styles.buttonInnerContainer}
             android_ripple={{ color: '#fff' }}
-            onPress={() => {/* handle login */ }}
+            onPress={handleRegister}
           >
-            <Text style={styles.buttonText}>Login</Text>
+            <Text style={styles.buttonText}>Register</Text>
           </Pressable>
         </View>
         <View style={styles.buttonOuterContainer}>
-          <TouchableOpacity onPress={() => router.push('/signup')}>
-            <Text style={styles.link}>Don't you have an account? Click here to Register</Text>
+          <TouchableOpacity onPress={() => router.push('/login')}>
+            <Text style={styles.link}>Already have an account? Click here to Login</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -67,22 +131,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   footer: {
-    flex: 1.5,
+    flex: 3,
     backgroundColor: '#3b3b3b',
     borderTopLeftRadius: 100,
     elevation: 20,
   },
   logo: {
     alignSelf: 'center',
-    width: 300,
-    height: 300,
+    width: 200,
+    height: 200,
     borderRadius: 20,
   },
   titleContainer: {
     backgroundColor: '#fff',
     borderRadius: 30,
     marginHorizontal: 100,
-    marginVertical: 50,
+    marginVertical: 25,
     elevation: 6,
   },
   title: {
@@ -96,15 +160,15 @@ const styles = StyleSheet.create({
     color: '#000',
     borderColor: '#fff',
     marginHorizontal: 30,
-    marginTop: 10,
-    marginBottom: 25,
+    marginTop: 8,
+    marginBottom: 10,
     height: 60,
     borderWidth: 10,
     borderRadius: 20,
     backgroundColor: '#fff',
     elevation: 6,
-    fontSize: 18,
-    paddingHorizontal: 20,
+    fontSize: 14,
+    padding: 10,
   },
   buttonOuterContainer: {
     borderRadius: 28,
@@ -113,7 +177,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   buttonInnerContainer: {
-    backgroundColor: '#328E6E',
+    backgroundColor: '#3D90D7',
     paddingVertical: 8,
   },
   buttonText: {

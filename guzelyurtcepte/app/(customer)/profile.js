@@ -53,7 +53,7 @@ export default function ProfileScreen() {
       {/* Avatar at top center */}
       <View style={styles.avatarContainer}>
         <Image
-          source={require('../assets/images/user.png')}
+          source={require('../../assets/images/user.png')}
           style={styles.avatar}
         />
       </View>
