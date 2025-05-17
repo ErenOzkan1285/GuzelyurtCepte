@@ -123,19 +123,29 @@ class Includes(db.Model):
 
 class CustomerTrip(db.Model):
     __tablename__ = 'CUSTOMER_TRIP'
-    customer_trip_id = db.Column(db.Integer, primary_key=True)
-    cost = db.Column(db.Numeric(10, 2))
-    refunded_credit = db.Column(db.Numeric(10, 2), default=0.00)
-    trip_id = db.Column(db.Integer, db.ForeignKey('TRIP.trip_id'))
-    start_position = db.Column(db.String(255), db.ForeignKey('STOP.name'))
-    end_position = db.Column(db.String(255), db.ForeignKey('STOP.name'))
-    customer_email = db.Column(db.String(255), db.ForeignKey('CUSTOMER.email'))
 
-    # Relationships
-    trip = db.relationship('Trip', back_populates='customer_trips')
-    start_stop = db.relationship('Stop', foreign_keys=[start_position])
-    end_stop = db.relationship('Stop', foreign_keys=[end_position])
-    customer = db.relationship('Customer', back_populates='customer_trips')
+    customer_trip_id  = db.Column(db.Integer, primary_key=True)
+    cost              = db.Column(db.Numeric(10, 2))
+    refunded_credit   = db.Column(db.Numeric(10, 2), default=0.00)
+    trip_id           = db.Column(db.Integer, db.ForeignKey('TRIP.trip_id'))
+    start_position    = db.Column(db.String(255), db.ForeignKey('STOP.name'))
+    end_position      = db.Column(db.String(255), db.ForeignKey('STOP.name'))
+
+    customer_email    = db.Column(
+        'customer',                  
+        db.String(255),
+        db.ForeignKey('CUSTOMER.email')
+    )
+
+    trip    = relationship('Trip', back_populates='customer_trips')
+    start_stop = relationship('Stop', foreign_keys=[start_position])
+    end_stop   = relationship('Stop', foreign_keys=[end_position])
+
+    customer = relationship(
+      'Customer',
+      back_populates='customer_trips',
+      foreign_keys=[customer_email]
+    )
     
 class Feedback(db.Model):
     __tablename__ = 'FEEDBACK'
