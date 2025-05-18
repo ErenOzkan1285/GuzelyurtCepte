@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
+from sqlalchemy import func
 from db_config import db
-from models.models import Feedback, User, Trip
+from models.models import Feedback, Support, User, Trip
 
 feedback_bp = Blueprint('feedback', __name__)
 
@@ -63,3 +64,38 @@ def update_feedback(feedback_id):
         db.session.rollback()
         print("Error while patching feedback:", e)
         return jsonify({'error': str(e)}), 500
+
+@feedback_bp.route('/', methods=['POST'])
+def create_feedback():
+    data = request.get_json() or {}
+    comment        = data.get('comment')
+    customer_email = data.get('customer')
+
+    if not comment or not customer_email:
+        return jsonify({'error': 'Missing comment or customer email'}), 400
+    
+    trip_id = 1
+
+    # pick a random support staff
+    support = Support.query.order_by(func.random()).first()
+    if not support:
+        return jsonify({'error': 'No support staff available'}), 500
+
+    fb = Feedback(
+        comment  = comment,
+        customer = customer_email,
+        support  = support.email,
+        trip_id  = trip_id,
+        response = None
+    )
+    db.session.add(fb)
+    db.session.commit()
+
+    return jsonify({
+        'feedback_id': fb.feedback_id,
+        'comment':     fb.comment,
+        'response':    fb.response,
+        'support':     fb.support,
+        'customer':    fb.customer,
+        'trip_id':     fb.trip_id
+    }), 201

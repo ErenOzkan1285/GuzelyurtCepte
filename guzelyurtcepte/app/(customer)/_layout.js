@@ -47,6 +47,28 @@ export default function CustomerLayout() {
           headerShown: false,
         }}
       />
+      <Tabs.Screen
+        name="edit"
+        options={{
+          // completely hide its button AND collapse its tabBar entry:
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
+
+          // you can still show a header if you like:
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
+        name="feedback"
+        options={{
+          // completely hide its button AND collapse its tabBar entry:
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
+
+          // you can still show a header if you like:
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 }

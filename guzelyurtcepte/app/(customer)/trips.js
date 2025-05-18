@@ -65,7 +65,7 @@ export default function TripsScreen() {
                 {item.start_position} → {item.end_position}
               </Text>
             </View>
-            <Text style={styles.cost}>${item.cost.toFixed(2)}</Text>
+            <Text style={styles.cost}>{item.cost.toFixed(2)}</Text>
           </View>
         )}
       />

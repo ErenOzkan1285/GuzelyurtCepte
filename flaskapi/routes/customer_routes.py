@@ -60,24 +60,28 @@ def get_customer(email):
 @customer_bp.route('/<email>', methods=['PUT'])
 def update_customer(email):
     data = request.json or {}
-    if 'balance' not in data:
-        return jsonify({'error': 'Missing balance field'}), 400
-
     customer = Customer.query.get(email)
     if not customer:
-        return jsonify({'error': 'Customer not found'}), 404
+        return jsonify({'error':'Customer not found'}),404
 
-    try:
+    # let’s update any fields present…
+    if 'balance' in data:
         customer.balance = data['balance']
-        db.session.commit()
-        # ← ensure balance is a plain float, not Decimal
-        return jsonify({
-            'email': customer.email,
-            'balance': float(customer.balance)
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+    if 'name' in data or 'sname' in data or 'phone' in data:
+        user = customer.user
+        if 'name'  in data: user.name  = data['name']
+        if 'sname' in data: user.sname = data['sname']
+        if 'phone' in data: user.phone = data['phone']
+    db.session.commit()
+
+    return jsonify({
+      'email':   customer.email,
+      'balance': float(customer.balance),
+      'name':    customer.user.name,
+      'sname':   customer.user.sname,
+      'phone':   customer.user.phone
+    })
+
     
 @customer_bp.route('/<email>/trips', methods=['GET'])
 def get_customer_trips(email):

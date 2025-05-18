@@ -149,7 +149,7 @@ class CustomerTrip(db.Model):
     
 class Feedback(db.Model):
     __tablename__ = 'FEEDBACK'
-    feedback_id = db.Column(db.Integer, primary_key=True)
+    feedback_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     comment = db.Column(db.Text)
     response = db.Column(db.Text)
     trip_id = db.Column(db.Integer, db.ForeignKey('TRIP.trip_id'))
