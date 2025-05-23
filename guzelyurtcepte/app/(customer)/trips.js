@@ -1,4 +1,3 @@
-// /app/(customer)/trips/index.js
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -18,6 +17,7 @@ export default function TripsScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [trips, setTrips] = useState([]);
+  const [refundedTotal, setRefundedTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +28,22 @@ export default function TripsScreen() {
     const host = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
     fetch(`http://${host}:5000/api/customers/${encodeURIComponent(user.email)}/trips`)
       .then(r => r.json())
-      .then(json => setTrips(json))
+      .then(json => {
+        setTrips(json);
+
+        // ✅ Refunded total fetch
+        fetch(`http://${host}:5000/api/customers/${encodeURIComponent(user.email)}/refunded-total`)
+          .then(r => r.json())
+          .then(data => {
+            if (data?.refunded_credit !== undefined) {
+              setRefundedTotal(data.refunded_credit.toFixed(2));
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            Alert.alert('Error', 'Could not load refunded total');
+          });
+      })
       .catch(err => {
         console.error(err);
         Alert.alert('Error', 'Could not load trips');
@@ -53,21 +68,31 @@ export default function TripsScreen() {
         <Ionicons name="arrow-back" size={24} color="#1E90FF" />
         <Text style={styles.backText}>Back to Profile</Text>
       </TouchableOpacity>
+      <Text style={styles.refundText}>
+        Total Refunded Credit: {refundedTotal} ₺
+      </Text>
+
       <FlatList
         data={trips}
         keyExtractor={item => item.trip_id.toString()}
         ListEmptyComponent={() => <Text style={styles.empty}>You have no past trips.</Text>}
         renderItem={({ item }) => (
-          <View style={styles.row}>
-            <View style={styles.info}>
-              <Text style={styles.date}>{item.date_time}</Text>
-              <Text style={styles.route}>
-                {item.start_position} → {item.end_position}
-              </Text>
-            </View>
-            <Text style={styles.cost}>{item.cost.toFixed(2)}</Text>
-          </View>
-        )}
+  <View style={styles.row}>
+    <View style={styles.info}>
+      <Text style={styles.date}>{item.date_time}</Text>
+      <Text style={styles.route}>
+        {item.start_position} → {item.end_position}
+      </Text>
+    </View>
+    <View style={styles.amountRow}>
+      <Text style={styles.label}>Refund: </Text>
+      <Text style={styles.amount}>{item.refunded_credit.toFixed(2)} ₺</Text>
+      <Text style={styles.label}>   Cost: </Text>
+      <Text style={styles.amount}>{item.cost.toFixed(2)} ₺</Text>
+    </View>
+  </View>
+)}
+
       />
     </View>
   );
@@ -75,7 +100,7 @@ export default function TripsScreen() {
 
 const styles = StyleSheet.create({
   center:    { flex:1, justifyContent:'center', alignItems:'center' },
-  container: { flex:1, padding:24,marginTop: 50, backgroundColor:'#fff' },
+  container: { flex:1, padding:24, marginTop:50, backgroundColor:'#fff' },
   header:    { fontSize:20, fontWeight:'600', marginBottom:12 },
   row: {
     flexDirection:  'row',
@@ -99,4 +124,32 @@ const styles = StyleSheet.create({
     color:        '#1E90FF',
     fontSize:     16,
   },
+  refundText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E90FF',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+
+amountRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: 2,
+},
+
+label: {
+  fontSize: 12,
+  color: '#666',
+  fontWeight: '500',
+},
+
+amount: {
+  fontSize: 14,
+  fontWeight: '600',
+  color: '#1E90FF',
+},
+
+
 });

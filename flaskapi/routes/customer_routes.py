@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from db_config import db
-from models.models import Customer, User  
+from models.models import Customer, User 
+from models.models import Includes 
 
 customer_bp = Blueprint('customer', __name__)
 
@@ -82,22 +83,62 @@ def update_customer(email):
       'phone':   customer.user.phone
     })
 
-    
+
+
+@customer_bp.route('/<email>/refunded-total', methods=['GET'])
+def get_total_refunded_credit(email):
+    try:
+        customer = Customer.query.get(email)
+        if not customer:
+            return jsonify({'error': 'Customer not found'}), 404
+
+        total = sum(float(ct.refunded_credit or 0) for ct in customer.customer_trips)
+        return jsonify({'refunded_credit': round(total, 2)})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
 @customer_bp.route('/<email>/trips', methods=['GET'])
 def get_customer_trips(email):
     customer = Customer.query.get(email)
 
     trips = []
     for ct in customer.customer_trips:
-        # ct.trip gives you the Trip object
-        # ct.start_stop and ct.end_stop give Stop objects
+        # Stop order hesapla
+        start_order = db.session.query(Includes.stop_order)\
+            .filter(Includes.trip_id == ct.trip_id, Includes.name == ct.start_position)\
+            .scalar()
+
+        end_order = db.session.query(Includes.stop_order)\
+            .filter(Includes.trip_id == ct.trip_id, Includes.name == ct.end_position)\
+            .scalar()
+
+        if start_order is not None and end_order is not None:
+            refunded_credit = abs(end_order - start_order)
+            cost = 15 - refunded_credit
+
+            # ✨ Veritabanına yaz
+            ct.refunded_credit = refunded_credit
+            ct.cost = cost
+
+        else:
+            refunded_credit = 0
+            cost = 15
+            ct.refunded_credit = 0
+            ct.cost = 15
+
         trips.append({
             'trip_id':        ct.trip_id,
             'date_time':      ct.trip.date_time,
-            'cost':           float(ct.cost),
-            'refunded_credit': float(ct.refunded_credit),
-            'start_position': ct.start_stop.name,
-            'end_position':   ct.end_stop.name,
+            'cost':           float(cost),
+            'refunded_credit': float(refunded_credit),
+            'start_position': ct.start_stop.name if ct.start_stop else "Unknown",
+            'end_position':   ct.end_stop.name if ct.end_stop else "Unknown",
         })
 
+    db.session.commit()  # 🧠 Veritabanına hem cost hem refund kaydolur
     return jsonify(trips)
+
+
