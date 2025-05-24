@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 from db_config import db
 from models.models import Customer, User 
 from models.models import Includes 
+from models.models import CustomerTrip, Stop
+from sqlalchemy import func
 
 customer_bp = Blueprint('customer', __name__)
 
@@ -85,6 +87,45 @@ def update_customer(email):
 
 
 
+
+@customer_bp.route('/<email>/start-trip', methods=['POST'])
+def start_trip(email):
+    data = request.json
+    start = data.get('start_position')
+    end = data.get('end_position')
+    trip_id = data.get('trip_id')
+
+    if not (start and end and trip_id):
+        return jsonify({'error': 'Missing data'}), 400
+
+    customer = Customer.query.get(email)
+    if not customer:
+        return jsonify({'error': 'Customer not found'}), 404
+
+    # En büyük mevcut customer_trip_id'yi bul
+    max_id = db.session.query(func.max(CustomerTrip.customer_trip_id)).scalar() or 0
+    new_id = max_id + 1
+
+    # Yeni kayıt oluştur
+    new_trip = CustomerTrip(
+        customer_trip_id=new_id,
+        customer_email=email,
+        start_position=start,
+        end_position=end,
+        trip_id=trip_id,
+        refunded_credit=0,
+        cost=15
+    )
+
+    db.session.add(new_trip)
+    db.session.commit()
+
+    return jsonify({'message': 'Trip added', 'trip_id': new_id}), 201
+
+
+
+
+
 @customer_bp.route('/<email>/refunded-total', methods=['GET'])
 def get_total_refunded_credit(email):
     try:
@@ -131,7 +172,7 @@ def get_customer_trips(email):
 
         trips.append({
             'trip_id':        ct.trip_id,
-            'date_time':      ct.trip.date_time,
+            'date_time':      ct.trip.date_time if ct.trip else "Unknown",
             'cost':           float(cost),
             'refunded_credit': float(refunded_credit),
             'start_position': ct.start_stop.name if ct.start_stop else "Unknown",
